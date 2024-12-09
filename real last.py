@@ -439,4 +439,64 @@ class WindowClass(QMainWindow, form_class):
         self.line3.setReadOnly(True)
         self.line4.setReadOnly(True)
         self.line5.setReadOnly(True)
+        self.line6.setReadOnly(True)
+        self.line7.setReadOnly(True)
+        self.line8.setReadOnly(True)
+        self.line9.setReadOnly(True)
+        self.speed_set.setReadOnly(True)
+        self.speed_real.setReadOnly(True)
+        self.temperature.setReadOnly(True)
+        self.humidity.setReadOnly(True)
+
+        self.under3.setStyleSheet("background-color: lightyellow;")  # 배경색 설정
+
+    # 속도 슬라이더 설정
+    def setup_speed_slider(self):
+        self.speed_slider.setMinimum(0)
+        self.speed_slider.setMaximum(100)
+        self.speed_slider.setSingleStep(1)
+        self.speed_slider.setPageStep(10)
+        self.speed_slider.setValue(0)
+        self.speed_slider.setTracking(True)
+        self.speed_slider.valueChanged.connect(self.update_speed_set)
+
+    # 카메라 모드 변경 버튼 연결
+    def setup_camera_mode_buttons(self):
+        self.b_c.clicked.connect(lambda: self.change_camera_mode("basic"))
+        self.b_d.clicked.connect(lambda: self.change_camera_mode("black_white"))
+        self.b_r.clicked.connect(self.red_only_mode)
+        self.b_f.clicked.connect(lambda: self.change_camera_mode("face_tracking"))
+
+    # 목표 경도 입력 필드
+    def setup_navigation_buttons(self):
+        self.b1.clicked.connect(self.start_navigation)
+        self.b2.clicked.connect(self.move_and_return)
+        self.b3.clicked.connect(self.stop_and_clear)
+
+    # 소켓 연결 및 예외 처리
+    def connect_socket(self):
+        try:
+            self.socket.connect('http://localhost:5000')  # Flask 서버 주소
+            self.socket.on('message', self.receive_message)  # 소켓 메시지 연결
+        except socketio.exceptions.ConnectionError:
+            QMessageBox.warning(self, "서버 연결 오류", "Flask 서버에 연결할 수 없습니다.")
+
+if __name__ == "__main__":
+    import threading
+
+    # Flask 서버를 별도의 스레드에서 실행
+    flask_thread = threading.Thread(target=lambda: socketio_server.run(app, host='0.0.0.0', allow_unsafe_werkzeug=True))
+    flask_thread.start()
+
+    # QApplication 인스턴스 생성
+    app = QApplication(sys.argv)
+
+    # WindowClass의 인스턴스 생성
+    myWindow = WindowClass()
+
+    # 프로그램 화면을 보여주는 코드
+    myWindow.show()
+
+    # 프로그램을 이벤트 루프로 진입시키는 (프로그램을 작동시키는) 코드
+    sys.exit(app.exec_())
 
