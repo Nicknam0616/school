@@ -15,6 +15,10 @@ import serial
 from serial.tools import list_ports
 from geopy.distance import geodesic
 import time
+import os
+
+# 환경 변수 설정 (TensorFlow Lite 최적화 비활성화)
+os.environ["TF_XLA_FLAGS"] = "--tf_xla_enable_xla_devices=0"
 
 # Flask 설정
 app = Flask(__name__)
@@ -47,7 +51,7 @@ class AIThread(QThread):
         try:
             translated_input = self.translator.translate(self.user_input)
             completion = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",  # 적합한 모델로 수정
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": translated_input}
@@ -75,7 +79,9 @@ class CameraThread(QThread):
         self.mode = mode
         self.running = True
         self.cap = cv2.VideoCapture(0)
-        self.face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.2)
+        self.face_detection = mp.solutions.face_detection.FaceDetection(
+            model_selection=0, min_detection_confidence=0.5
+        )
 
     def run(self):
         print("CameraThread started")
@@ -94,7 +100,8 @@ class CameraThread(QThread):
     def stop(self):
         self.running = False
         self.cap.release()
-        self.wait()  # 스레드가 완전히 종료되도록 대기
+        self.face_detection.close()  # Mediapipe 리소스 해제
+        self.wait()  # 스레드가 종료될 때까지 대기
 
     def process_frame(self, frame):
         if self.mode == "basic":
@@ -134,7 +141,6 @@ class CameraThread(QThread):
 
     def change_mode(self, mode):
         self.mode = mode
-
 class WindowClass(QMainWindow, form_class):
     incoming_packet_signal = pyqtSignal(str)
     outgoing_packet_signal = pyqtSignal(str)
@@ -339,11 +345,19 @@ if __name__ == "__main__":
     import threading
 
     # Flask 서버 실행
-    flask_thread = threading.Thread(target=lambda: socketio_server.run(app, host='0.0.0.0', allow_unsafe_werkzeug=True))
+    def run_flask():
+        from waitress import serve
+        serve(app, host='0.0.0.0', port=5000)
+
+    flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
 
     # PyQt5 애플리케이션 실행
     app = QApplication(sys.argv)
     myWindow = WindowClass()
     myWindow.show()
-    sys.exit(app.exec_())
+
+    try:
+        sys.exit(app.exec_())
+    except Exception as e:
+        print(f"Error during execution: {e}")
