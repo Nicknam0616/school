@@ -481,6 +481,19 @@ class WindowClass(QMainWindow, form_class):
         except socketio.exceptions.ConnectionError:
             QMessageBox.warning(self, "서버 연결 오류", "Flask 서버에 연결할 수 없습니다.")
 
+    def append_incoming_packet(self, packet):
+        """패킷을 UI에 추가하는 메서드"""
+        import datetime
+        current_time = datetime.datetime.now().strftime("%H:%M")
+        self.line1.append(f"-> {current_time} | {packet}")  # 또는 적절한 UI 요소에 추가
+
+    def append_outgoing_packet(self, packet):
+        """나가는 패킷을 UI에 추가하는 메서드"""
+        import datetime
+        current_time = datetime.datetime.now().strftime("%H:%M")
+        packet_display = packet.replace("\n", "\\n")  # \n을 \\n으로 표시
+        self.line1.append(f"<- {current_time} | {packet_display}")  # 또는 적절한 UI 요소에 추가
+
 if __name__ == "__main__":
     import threading
 
