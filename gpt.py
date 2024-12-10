@@ -16,7 +16,9 @@ from serial.tools import list_ports
 from geopy.distance import geodesic
 import time
 import os
-
+import sys
+from PyQt5.QtWidgets import QApplication
+import threading
 # 환경 변수 설정 (TensorFlow Lite 최적화 비활성화)
 os.environ["TF_XLA_FLAGS"] = "--tf_xla_enable_xla_devices=0"
 
@@ -24,6 +26,7 @@ os.environ["TF_XLA_FLAGS"] = "--tf_xla_enable_xla_devices=0"
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio_server = SocketIO(app, async_mode='threading')
+
 
 @app.route('/')
 def home():
@@ -342,22 +345,43 @@ class WindowClass(QMainWindow, form_class):
         self.change_camera_mode("red_only")
 
 if __name__ == "__main__":
-    import threading
 
-    # Flask 서버 실행
-    def run_flask():
-        from waitress import serve
-        serve(app, host='0.0.0.0', port=5000)
+    # Flask 설정
+    flask_app = Flask(__name__)  # 기존 'app'을 'flask_app'으로 변경
+    flask_app.config['SECRET_KEY'] = 'secret!'
+    socketio_server = SocketIO(flask_app, async_mode='threading')  # Flask 객체 이름 수정
 
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.start()
 
-    # PyQt5 애플리케이션 실행
-    app = QApplication(sys.argv)
-    myWindow = WindowClass()
-    myWindow.show()
+    @flask_app.route('/')
+    def home():
+        return render_template('index.html')
 
-    try:
-        sys.exit(app.exec_())
-    except Exception as e:
-        print(f"Error during execution: {e}")
+
+    @socketio_server.on('message')
+    def handleMessage(msg):
+        print('Message:', msg['msg'])
+        emit('message', {'user': msg['user'], 'msg': msg['msg']}, broadcast=True)
+
+
+    if __name__ == "__main__":
+        import threading
+
+
+        # Flask 서버 실행
+        def run_flask():
+            from waitress import serve
+            serve(flask_app, host='0.0.0.0', port=5000)  # Flask 애플리케이션 이름 수정
+
+
+        flask_thread = threading.Thread(target=run_flask)
+        flask_thread.start()
+
+        # PyQt5 애플리케이션 실행
+        qt_app = QApplication(sys.argv)  # QApplication 객체 이름 변경
+        myWindow = WindowClass()
+        myWindow.show()
+
+        try:
+            sys.exit(qt_app.exec_())  # qt_app로 명확히 호출
+        except Exception as e:
+            print(f"Error during execution: {e}")
