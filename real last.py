@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt5 import uic
+from PyQt5 import uic 
 import openai
 from deep_translator import GoogleTranslator
 import cv2
@@ -75,7 +75,7 @@ class CameraThread(QThread):
         self.mode = mode
         self.running = True
         self.cap = cv2.VideoCapture(0)  # 비디오 캡처 객체 초기화
-        self.face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.2)
+        #self.face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.2)
 
     def run(self):
         print("CameraThread started")
@@ -108,8 +108,8 @@ class CameraThread(QThread):
             return cv2.cvtColor(gray_image, cv2.COLOR_GRAY2RGB)
         elif self.mode == "red_only":
             return self.red_only_detection(frame)
-        elif self.mode == "face_tracking":
-            return self.face_tracking(frame)
+        #elif self.mode == "face_tracking":
+        #    return self.face_tracking(frame)
         return frame
 
     def red_only_detection(self, frame):
@@ -124,17 +124,17 @@ class CameraThread(QThread):
         result = cv2.bitwise_and(frame, frame, mask=mask)
         return result
 
-    def face_tracking(self, frame):
-        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.face_detection.process(rgb_image)
-        if results.detections:
-            for detection in results.detections:
-                bbox = detection.location_data.relative_bounding_box
-                ih, iw, _ = frame.shape
-                x, y, w, h = (int(bbox.xmin * iw), int(bbox.ymin * ih),
-                              int(bbox.width * iw), int(bbox.height * ih))
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #def face_tracking(self, frame):
+    #    rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #    results = self.face_detection.process(rgb_image)
+    #    if results.detections:
+    #        for detection in results.detections:
+    #            bbox = detection.location_data.relative_bounding_box
+    #            ih, iw, _ = frame.shape
+    #            x, y, w, h = (int(bbox.xmin * iw), int(bbox.ymin * ih),
+    #                          int(bbox.width * iw), int(bbox.height * ih))
+    #            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    #    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     def change_mode(self, mode):
         print(f"Changing camera mode to: {mode}")
@@ -465,7 +465,7 @@ class WindowClass(QMainWindow, form_class):
         self.b_c.clicked.connect(lambda: self.change_camera_mode("basic"))
         self.b_d.clicked.connect(lambda: self.change_camera_mode("black_white"))
         self.b_r.clicked.connect(self.red_only_mode)
-        self.b_f.clicked.connect(lambda: self.change_camera_mode("face_tracking"))
+        #self.b_f.clicked.connect(lambda: self.change_camera_mode("face_tracking"))
 
     # 목표 경도 입력 필드
     def setup_navigation_buttons(self):
